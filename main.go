@@ -70,7 +70,10 @@ func Run(ctx context.Context, client *github.Client) {
 	}
 	defer file.Close()
 
-	gocsv.MarshalFile(&repos, file)
+	err = gocsv.MarshalFile(&repos, file)
+	if err != nil {
+		fmt.Println("Err: ", err)
+	}
 }
 
 func GetGithubClient(ctx context.Context, token string) *github.Client {
@@ -94,7 +97,7 @@ func GetAllRepos(ctx context.Context, client *github.Client) []GithubRepo {
 
 	// get all pages of results - loop until there are no more results
 	for {
-		repos, _, err := client.Repositories.ListByOrg(ctx, organization, opt)
+		repos, resp, err := client.Repositories.ListByOrg(ctx, organization, opt)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -140,11 +143,10 @@ func GetAllRepos(ctx context.Context, client *github.Client) []GithubRepo {
 			//}
 		}
 
-		//if resp.NextPage == 0 {
-		//	break
-		//}
-		//opt.Page = resp.NextPage
-		break
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
 	}
 
 	return allRepos
